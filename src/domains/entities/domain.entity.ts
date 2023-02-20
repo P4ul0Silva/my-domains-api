@@ -7,7 +7,7 @@ export class Domain {
     @PrimaryGeneratedColumn('uuid')
     id: string
 
-    @Column({unique: true})
+    @Column()
     domain: string
 
     @Column()
@@ -24,4 +24,7 @@ export class Domain {
 
     @ManyToOne(() => User, (user) => user.domains)
     user: User
+
+    @Column()
+    userId: string
 }

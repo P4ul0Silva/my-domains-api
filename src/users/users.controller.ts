@@ -1,7 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, UseGuards, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { plainToInstance } from 'class-transformer';
+import { User } from './entities/user.entity';
+import { AccessTokenGuard } from 'src/common/guards/accessToken.guard';
+import { RequestUserDto } from './dto/request-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -13,24 +17,32 @@ export class UsersController {
   }
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  async findAll() {
+    const users =  await this.usersService.findAll();
+    return plainToInstance(User, users)
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return await this.usersService.findOne(id);
+    const user = await this.usersService.findOne(id);
+    return plainToInstance(User, user)
   }
 
-  @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    if(id.length < 36) {
+  @Patch()
+  @UseGuards(AccessTokenGuard)
+  async update(@Req() req: any, @Body() updateUserDto: UpdateUserDto) {
+
+    const user: RequestUserDto = req.user
+
+    if(user.sub.length < 36) {
       throw new HttpException('Invalid user ID, must be a valid 32 character UUID string', HttpStatus.NOT_FOUND)
     }
-    return await this.usersService.update(id, updateUserDto);
+    const updatedUser = await this.usersService.update(user.sub, updateUserDto);
+    return plainToInstance(User, updatedUser)
   }
 
   @Delete(':id')
+  @UseGuards(AccessTokenGuard)
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }

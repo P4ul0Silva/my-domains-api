@@ -5,6 +5,8 @@ import * as argon2 from 'argon2';
 import { UsersService } from 'src/users/users.service';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { AuthDto } from './dto/auth.dto';
+import { plainToInstance } from 'class-transformer';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -15,11 +17,16 @@ export class AuthService {
         private configService: ConfigService,
     ) {}
 
-    hashData(data: string) {
-        return argon2.hash(data);
+    async hashData(data: string) {
+        return await argon2.hash(data);
       }
 
-    async signUp(createUserDto: CreateUserDto): Promise<any> {
+    async signUp(createUserDto: CreateUserDto): Promise<User> {
+
+      if(!createUserDto.email || !createUserDto.name || !createUserDto.password) {
+        throw new HttpException('Fields cannot be empty', HttpStatus.BAD_REQUEST)
+      }
+
         const userExists = await this.usersService.findOneByNameOrEmail(createUserDto.email)
 
         if(userExists) {
@@ -31,18 +38,24 @@ export class AuthService {
             ...createUserDto,
             password: hash,
         });
-        const tokens = await this.getTokens(newUser.id, newUser.name);
-        await this.updateRefreshToken(newUser.id, tokens.refreshToken);
-        return tokens
+
+        return plainToInstance(User, newUser)
     }
 
     async signIn(data: AuthDto) {
-        const user = await this.usersService.findOne(data.email);
-        if (!user) throw new HttpException('User does not exist', HttpStatus.BAD_REQUEST);
+      console.log(data)
+        const user = await this.usersService.findOneByNameOrEmail(data.email);
+        console.log(user)
+        if (!user) {
+          throw new HttpException('Email or password incorret or user do not exist', HttpStatus.BAD_REQUEST);
+        }
         const passwordMatches = await argon2.verify(user.password, data.password);
-        if (!passwordMatches)
-          throw new HttpException('Password is incorrect', HttpStatus.BAD_REQUEST);
-        const tokens = await this.getTokens(user.id, user.email);
+
+        if (!passwordMatches) {
+          throw new HttpException('Email or password is incorrect or user do not exist', HttpStatus.BAD_REQUEST);
+        }
+
+        const tokens = await this.getTokens(user.id, user.name);
         await this.updateRefreshToken(user.id, tokens.refreshToken);
         return tokens;
       }
@@ -56,35 +69,51 @@ export class AuthService {
         await this.usersService.update(userId, {
           refreshToken: hashedRefreshToken,
         });
+
+        return hashedRefreshToken
       }
 
-      async getTokens(userId: string, username: string) {
-        const [accessToken, refreshToken] = await Promise.all([
-          this.jwtService.signAsync(
-            {
-              sub: userId,
-              username,
-            },
-            {
-              secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-              expiresIn: '15m',
-            },
-          ),
-          this.jwtService.signAsync(
-            {
-              sub: userId,
-              username,
-            },
-            {
-              secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-              expiresIn: '7d',
-            },
-          ),
-        ]);
-    
-        return {
-          accessToken,
-          refreshToken,
-        };
-      }
+    async getTokens(userId: string, username: string) {
+      const [accessToken, refreshToken] = await Promise.all([
+        this.jwtService.signAsync(
+          {
+            sub: userId,
+            username,
+          },
+          {
+            secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+            expiresIn: '60s',
+          },
+        ),
+        this.jwtService.signAsync(
+          {
+            sub: userId,
+            username,
+          },
+          {
+            secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+            expiresIn: '7d',
+          },
+        ),
+      ]);
+  
+      return {
+        accessToken,
+        refreshToken,
+      };
+    }
+
+    async refreshTokens(userId: string, refreshToken: string) {
+      const user = await this.usersService.findOne(userId);
+      if (!user || !user.refreshToken)
+        throw new HttpException('Access Denied', HttpStatus.FORBIDDEN);
+      const refreshTokenMatches = await argon2.verify(
+        user.refreshToken,
+        refreshToken,
+      );
+      if (!refreshTokenMatches) throw new HttpException('Access Denied', HttpStatus.FORBIDDEN);
+      const tokens = await this.getTokens(user.id, user.name);
+      await this.updateRefreshToken(user.id, tokens.refreshToken);
+      return tokens;
+    }
 }

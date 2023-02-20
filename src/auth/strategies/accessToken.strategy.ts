@@ -1,7 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt} from "passport-jwt";
-import { Strategy } from "passport";
+import { Strategy } from "passport-local";
+import * as dotenv from 'dotenv'
+dotenv.config()
 
 type JwtPayload = {
     sub: string;
@@ -9,16 +11,17 @@ type JwtPayload = {
 }
 
 @Injectable()
-export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
+export class AccessTokenStrategy extends PassportStrategy(Strategy) {
 
     constructor(){
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-            secretOrkey: process.env.JWT_ACCESS_SECRET
+            ignoreExpiration: false,
+            secretOrKey: process.env.JWT_ACCESS_SECRET,
         });
     }
 
-    validate(payload: JwtPayload) {
+    async validate(payload: JwtPayload) {
         return payload
     }
 }

@@ -1,7 +1,9 @@
 export class CreateUserDto {
-    readonly id: string
+    readonly token: string;
+    readonly refreshToken: string;
+    readonly id: string;
+    readonly userId: string;
     name: string;
     email: string;
     password: string;
-    refreshToken: string;
 }

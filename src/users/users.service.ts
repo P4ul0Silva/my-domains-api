@@ -43,35 +43,51 @@ export class UsersService {
     const user = await this.usersRepository.findOne({where: [
       {email: identifier},
       {name: identifier},
-    ]})
+    ] })
     if(user) {
-      return true;
+      return user;
     }
     
-    // throw new HttpException('User not found', HttpStatus.NOT_FOUND)
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
+    const userExists = await this.usersRepository.findOneBy({id})
+    if(!userExists) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND)
+    }
+
+    const anotherUserEmailAlreadyExists = await this.usersRepository.findOneBy({email: updateUserDto.email})
+    if(anotherUserEmailAlreadyExists === null) {
+      throw new HttpException('Email is already registered', HttpStatus.BAD_REQUEST)
+    }
+
+  const updatedUser = await this.usersRepository.update(id, updateUserDto)
+    if(!updatedUser.affected){
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND)
+    }
+
+    const response = await this.usersRepository.findOneBy({id})
+    return response
+  }
+
+
+  async updateToken(id: string, updateUserDto: UpdateUserDto) {
     //check if user exists first
     const userExists = await this.usersRepository.findOneBy({id})
     if(!userExists) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND)
     }
 
-    //check if email is already a registered one
     const anotherUserEmailAlreadyExists = await this.usersRepository.findOneBy({email: updateUserDto.email})
     if(anotherUserEmailAlreadyExists === null) {
-      console.log(updateUserDto)
       throw new HttpException('Email is already registered', HttpStatus.BAD_REQUEST)
     }
 
-  // if all checks pass, update the user.
-    const updatedUser = await this.usersRepository.update(id, updateUserDto)
-    if(!updatedUser.affected){
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND)
-    }
+    await this.usersRepository.upsert(updateUserDto, ['refreshToken'])
 
-    return await this.usersRepository.findOneBy({id})
+    const searchUpdatedUser = await this.usersRepository.findOneBy({id})
+
+    return searchUpdatedUser
   }
 
   async remove(id: string) {

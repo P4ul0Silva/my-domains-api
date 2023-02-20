@@ -1,3 +1,4 @@
+import { Exclude } from "class-transformer";
 import { Domain } from "src/domains/entities/domain.entity";
 import { Entity, Column, PrimaryGeneratedColumn, Unique, OneToMany } from "typeorm";
 
@@ -15,8 +16,14 @@ export class User {
     email: string
 
     @Column()
+    @Exclude()
     password: string
 
-    @OneToMany(() => Domain, domain => domain.user)
+    @OneToMany(() => Domain, domain => domain.user, {onDelete: 'CASCADE'})
     domains: Domain
+
+    @Column({update: true, nullable: true})
+
+    @Exclude()
+    refreshToken: string;
 }

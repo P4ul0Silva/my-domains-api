@@ -11,7 +11,7 @@ import * as dotenv from 'dotenv'
 dotenv.config();
 
 @Module({
-  imports: [UsersModule, DomainsModule, TypeOrmModule.forRoot({
+  imports: [AuthModule, UsersModule, DomainsModule, TypeOrmModule.forRoot({
     type: 'postgres',
     host: process.env.POSTGRES_HOST,
     port: +process.env.POSTGRES_PORT,
@@ -20,7 +20,7 @@ dotenv.config();
     database: process.env.POSTGRES_DATABASE,
     autoLoadEntities: true,
     synchronize: true,
-  }), AuthModule],
+  })],
   controllers: [AppController],
   providers: [AppService],
 })
