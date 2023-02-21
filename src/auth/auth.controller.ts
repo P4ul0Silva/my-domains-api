@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { instanceToPlain } from 'class-transformer';
 import { Request } from 'express';
 import { AccessTokenGuard } from 'src/common/guards/accessToken.guard';
@@ -32,6 +32,14 @@ export class AuthController {
     const refreshToken = req.user['refreshToken'];
     const refreshedToken = this.authService.refreshTokens(userId, refreshToken);
     return instanceToPlain(refreshedToken)
+}
+
+@UseGuards(AccessTokenGuard)
+@Patch('change-password')
+async changePassword(@Req() req: any) {
+  console.log(req.user.sub)
+  console.log(req.body.password)
+  await this.authService.updatePassword(req.user.sub, req.body.password)
 }
 
   @UseGuards(AccessTokenGuard)

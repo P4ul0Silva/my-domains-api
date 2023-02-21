@@ -27,7 +27,7 @@ export class AuthService {
         throw new HttpException('Fields cannot be empty', HttpStatus.BAD_REQUEST)
       }
 
-        const userExists = await this.usersService.findOneByNameOrEmail(createUserDto.email)
+        const userExists = await this.usersService.findOneByEmail(createUserDto.email)
 
         if(userExists) {
             throw new HttpException('User already exists', HttpStatus.BAD_REQUEST)
@@ -43,9 +43,7 @@ export class AuthService {
     }
 
     async signIn(data: AuthDto) {
-      console.log(data)
-        const user = await this.usersService.findOneByNameOrEmail(data.email);
-        console.log(user)
+        const user = await this.usersService.findOneByEmail(data.email);
         if (!user) {
           throw new HttpException('Email or password incorret or user do not exist', HttpStatus.BAD_REQUEST);
         }
@@ -66,11 +64,17 @@ export class AuthService {
 
     async updateRefreshToken(userId: string, refreshToken: string) {
         const hashedRefreshToken = await this.hashData(refreshToken);
-        await this.usersService.update(userId, {
+        await this.usersService.updateToken(userId, {
           refreshToken: hashedRefreshToken,
         });
 
         return hashedRefreshToken
+      }
+
+      async updatePassword(id: string, password: string) {
+        const hash = await this.hashData(password);
+        const user = await this.usersService.findOne(id)
+        await this.usersService.update(id, {...user, password: hash});
       }
 
     async getTokens(userId: string, username: string) {
