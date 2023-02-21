@@ -19,7 +19,7 @@ export class User {
     @Exclude()
     password: string
 
-    @OneToMany(() => Domain, domain => domain.user, {onDelete: 'CASCADE'})
+    @OneToMany(() => Domain, domain => domain.user)
     domains: Domain
 
     @Column({update: true, nullable: true})

@@ -21,7 +21,6 @@ export class DomainsController {
   @Get()
   async findAll(@Req() req: any) {
     const userId = req.user.sub
-    console.log(userId)
     return await this.domainsService.findAll(userId);
   }
 

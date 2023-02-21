@@ -32,18 +32,24 @@ export class UsersController {
   @UseGuards(AccessTokenGuard)
   async update(@Req() req: any, @Body() updateUserDto: UpdateUserDto) {
 
-    const user: RequestUserDto = req.user
+    const userId: string = req.user.sub
+    const {email, name} = updateUserDto
 
-    if(user.sub.length < 36) {
+    if(userId.length < 36) {
       throw new HttpException('Invalid user ID, must be a valid 32 character UUID string', HttpStatus.NOT_FOUND)
     }
-    const updatedUser = await this.usersService.update(user.sub, updateUserDto);
+    const updatedUser = await this.usersService.update(userId, {name, email});
     return plainToInstance(User, updatedUser)
   }
 
   @Delete(':id')
   @UseGuards(AccessTokenGuard)
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
+  remove(@Req() req: any) {
+    const user: RequestUserDto = req.user
+
+    if(user.sub.length < 36) {
+      throw new HttpException('Invalid user ID, must be a valid 32 character UUID string', HttpStatus.NOT_FOUND)
+    }
+    return this.usersService.remove(user.sub);
   }
 }

@@ -22,8 +22,6 @@ export class UsersService {
     const newUser = this.usersRepository.create(user);
     await this.usersRepository.save(newUser)
     return newUser
-
-
   }
 
   findAll() {
@@ -35,19 +33,14 @@ export class UsersService {
     if(user) {
       return user;
     }
-    
     throw new HttpException('User not found', HttpStatus.NOT_FOUND)
   }
 
-  async findOneByNameOrEmail(identifier: string) {
-    const user = await this.usersRepository.findOne({where: [
-      {email: identifier},
-      {name: identifier},
-    ] })
+  async findOneByEmail(email: string) {
+    const user = await this.usersRepository.findOne({where: {email} })
     if(user) {
       return user;
     }
-    
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
@@ -57,9 +50,11 @@ export class UsersService {
     }
 
     const anotherUserEmailAlreadyExists = await this.usersRepository.findOneBy({email: updateUserDto.email})
-    if(anotherUserEmailAlreadyExists === null) {
-      throw new HttpException('Email is already registered', HttpStatus.BAD_REQUEST)
+    if(anotherUserEmailAlreadyExists) {
+      if(anotherUserEmailAlreadyExists.email !== userExists.email)
+        throw new HttpException('Wrong email for current user', HttpStatus.BAD_REQUEST)
     }
+
 
   const updatedUser = await this.usersRepository.update(id, updateUserDto)
     if(!updatedUser.affected){
@@ -72,21 +67,13 @@ export class UsersService {
 
 
   async updateToken(id: string, updateUserDto: UpdateUserDto) {
-    //check if user exists first
     const userExists = await this.usersRepository.findOneBy({id})
     if(!userExists) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND)
     }
 
-    const anotherUserEmailAlreadyExists = await this.usersRepository.findOneBy({email: updateUserDto.email})
-    if(anotherUserEmailAlreadyExists === null) {
-      throw new HttpException('Email is already registered', HttpStatus.BAD_REQUEST)
-    }
-
-    await this.usersRepository.upsert(updateUserDto, ['refreshToken'])
-
+    await this.usersRepository.update(id, updateUserDto)
     const searchUpdatedUser = await this.usersRepository.findOneBy({id})
-
     return searchUpdatedUser
   }
 

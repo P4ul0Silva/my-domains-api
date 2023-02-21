@@ -22,7 +22,7 @@ export class Domain {
     @Column({type: 'decimal', precision:10, scale: 2})
     price: number
 
-    @ManyToOne(() => User, (user) => user.domains)
+    @ManyToOne(() => User, (user) => user.domains, {onDelete: 'CASCADE'})
     user: User
 
     @Column()
