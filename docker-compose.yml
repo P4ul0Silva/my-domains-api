@@ -1,6 +1,14 @@
 version: '3.9'
 services:
   api:
+    environment:
+      - JWT_ACCESS_SECRET=9D5GHVpUCNw9R6RVJgDMh0uHWCeCggPH57Vr0KfFnJsVRx7l1GY4
+      - JWT_REFRESH_SECRET=5D5GHVpUCNw9R6RVJgDMh0uHWCeCggPH57Vr0KfFnJsVRx7l1GY4
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DATABASE=postgres
+      - POSTGRES_HOST=my-domains-db
+      - POSTGRES_PORT=5432
     build: 
       context: .
       dockerfile: Dockerfile
@@ -8,20 +16,22 @@ services:
       - 3000:3000
     depends_on:
       - postgres
-    env_file:
-      - .env
     networks:
       - myDomainNetwork
     
     
   postgres:
     container_name: my-domains-db
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DATABASE=postgres
+      - POSTGRES_HOST=my-domains-db
+      - POSTGRES_PORT=5432
     image: postgres:latest
     restart: always
     ports:
       - 5431:5432
-    env_file:
-      - .env
     networks:
       - myDomainNetwork
 

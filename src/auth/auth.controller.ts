@@ -37,8 +37,6 @@ export class AuthController {
 @UseGuards(AccessTokenGuard)
 @Patch('change-password')
 async changePassword(@Req() req: any) {
-  console.log(req.user.sub)
-  console.log(req.body.password)
   await this.authService.updatePassword(req.user.sub, req.body.password)
 }
 
