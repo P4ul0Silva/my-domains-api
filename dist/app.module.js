@@ -29,6 +29,7 @@ AppModule = __decorate([
                 database: process.env.POSTGRES_DATABASE,
                 autoLoadEntities: true,
                 synchronize: true,
+                ssl: true
             })],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
