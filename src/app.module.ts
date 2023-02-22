@@ -20,6 +20,7 @@ dotenv.config();
     database: process.env.POSTGRES_DATABASE,
     autoLoadEntities: true,
     synchronize: true,
+    ssl: true
   })],
   controllers: [AppController],
   providers: [AppService],
